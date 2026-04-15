@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>CareMedi 책상 보안 등급 테스트</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+
+  :root {
+    --green: #2d7a4f;
+    --green-light: #3a9e64;
+    --green-pale: #e8f5ee;
+    --red: #d63031;
+    --orange: #e17055;
+    --yellow: #f39c12;
+    --dark: #1a1a2e;
+    --gray: #6c757d;
+    --bg: #f4f7f5;
+    --white: #ffffff;
+    --shadow: 0 4px 20px rgba(0,0,0,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    color: var(--dark);
+  }
+
+  /* ── 헤더 ── */
+  .header {
+    background: linear-gradient(135deg, var(--green) 0%, #1a5c38 100%);
+    color: white;
+    text-align: center;
+    padding: 28px 20px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: -30px;
+    width: 200px; height: 200px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+  }
+  .logo-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1.3;
+    margin-bottom: 6px;
+  }
+  .header p {
+    font-size: 13px;
+    opacity: 0.85;
+  }
+  .shield-icon {
+    font-size: 40px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  /* ── 진행바 ── */
+  .progress-wrap {
+    background: white;
+    padding: 14px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--green);
+  }
+  .progress-bar {
+    height: 8px;
+    background: #e0ebe5;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green-light), var(--green));
+    border-radius: 10px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── 메인 컨테이너 ── */
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+  }
+
+  /* ── 질문 카드 ── */
+  .question-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px 20px;
+    box-shadow: var(--shadow);
+    display: none;
+    animation: fadeUp 0.35s ease;
+  }
+  .question-card.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--green-pale);
+    color: var(--green);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .q-number {
+    font-size: 13px;
+    color: var(--gray);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .q-text {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.5;
+    color: var(--dark);
+    margin-bottom: 22px;
+  }
+  .q-tip {
+    background: #fff8e1;
+    border-left: 3px solid var(--yellow);
+    border-radius: 0 8px 8px 0;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #7a6000;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  /* ── 선택지 버튼 ── */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt-btn {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    background: white;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--dark);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .opt-btn:hover {
+    border-color: var(--green-light);
+    background: var(--green-pale);
+    transform: translateX(4px);
+  }
+  .opt-btn.selected-good {
+    border-color: var(--green);
+    background: var(--green-pale);
+    color: var(--green);
+    font-weight: 700;
+  }
+  .opt-btn.selected-bad {
+    border-color: var(--red);
+    background: #fff0f0;
+    color: var(--red);
+    font-weight: 700;
+  }
+  .opt-icon {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    background: #f0f0f0;
+    flex-shrink: 0;
+  }
+
+  /* ── 피드백 ── */
+  .feedback {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    display: none;
+  }
+  .feedback.good {
+    background: #e8f5ee;
+    color: #1a5c38;
+    border: 1px solid #b2dfcc;
+  }
+  .feedback.bad {
+    background: #fff0f0;
+    color: #a00000;
+    border: 1px solid #ffb3b3;
+  }
+  .feedback.show { display: block; }
+
+  /* ── 다음 버튼 ── */
+  .next-btn {
+    width: 100%;
+    margin-top: 18px;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--green-light), var(--green));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: none;
+    transition: transform 0.15s;
+    box-shadow: 0 4px 12px rgba(45,122,79,0.35);
+  }
+  .next-btn:active { transform: scale(0.98); }
+  .next-btn.show { display: block; }
+
+  /* ── 결과 화면 ── */
+  .result-screen {
+    display: none;
+    animation: fadeUp 0.4s ease;
+  }
+  .result-screen.show { display: block; }
+
+  .result-card {
+    background: white;
+    border-radius: 20px;
+    padding: 30px 24px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .result-grade-circle {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 36px;
+  }
+  .result-grade-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+  .result-title {
+    font-size: 22px;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+  .result-score {
+    font-size: 15px;
+    color: var(--gray);
+    margin-bottom: 16px;
+  }
+  .result-desc {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #444;
+    background: var(--green-pale);
+    border-radius: 12px;
+    padding: 14px 16px;
+    text-align: left;
+  }
+
+  /* 등급별 색상 */
+  .grade-s { background: linear-gradient(135deg,#1a7a4a,#2dbe73); color: white; }
+  .grade-a { background: linear-gradient(135deg,#2196F3,#42a5f5); color: white; }
+  .grade-b { background: linear-gradient(135deg,#f39c12,#f1c40f); color: white; }
+  .grade-c { background: linear-gradient(135deg,#e17055,#d63031); color: white; }
+
+  /* 항목별 결과 */
+  .item-results {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .item-results h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gray);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px;
+  }
+  .item-row:last-child { border-bottom: none; }
+  .item-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-good { background: var(--green); }
+  .dot-bad  { background: var(--red); }
+
+  /* 행동 가이드 카드 */
+  .guide-card {
+    background: linear-gradient(135deg, var(--green) 0%, #1a5c38 100%);
+    border-radius: 16px;
+    padding: 20px;
+    color: white;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(45,122,79,0.3);
+  }
+  .guide-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .guide-item {
+    display: flex;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+  }
+  .guide-item:last-child { border-bottom: none; }
+
+  /* 신고 버튼 */
+  .report-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(214,48,49,0.35);
+    margin-bottom: 12px;
+  }
+  .retry-btn {
+    width: 100%;
+    padding: 14px;
+    background: white;
+    color: var(--green);
+    border: 2px solid var(--green);
+    border-radius: 12px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* 인트로 */
+  .intro-card {
+    background: white;
+    border-radius: 20px;
+    padding: 28px 22px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .intro-card h2 {
+    font-size: 20px;
+    font-weight: 900;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  .intro-card p {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+  .intro-meta {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .meta-item {
+    text-align: center;
+  }
+  .meta-num {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--green);
+  }
+  .meta-label {
+    font-size: 11px;
+    color: var(--gray);
+    font-weight: 600;
+  }
+  .start-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--green-light), var(--green));
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(45,122,79,0.4);
+  }
+  .footer-note {
+    text-align: center;
+    font-size: 11px;
+    color: #aaa;
+    margin-top: 24px;
+  }
+</style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<div class="header">
+  <span class="shield-icon">🛡️</span>
+  <div class="logo-badge">CareMedi 정보보호팀</div>
+  <h1>내 책상 보안등급<br>자가진단 테스트</h1>
+  <p>10문항 · 약 2분 소요</p>
+</div>
+
+<!-- 진행바 (퀴즈 중 표시) -->
+<div class="progress-wrap" id="progressWrap" style="display:none">
+  <div class="progress-info">
+    <span id="progressText">1 / 10</span>
+    <span id="progressPct">0%</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 인트로 -->
+  <div id="introScreen" class="intro-card">
+    <h2>📋 지금 내 책상,<br>보안 괜찮을까요?</h2>
+    <p>업무 중 무심코 지나치는 작은 습관들이<br>회사 정보 유출로 이어질 수 있습니다.<br>10개 문항으로 내 보안 등급을 확인해 보세요.</p>
+    <div class="intro-meta">
+      <div class="meta-item">
+        <div class="meta-num">10</div>
+        <div class="meta-label">문항</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-num">4</div>
+        <div class="meta-label">등급</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-num">2분</div>
+        <div class="meta-label">소요</div>
+      </div>
+    </div>
+    <button class="start-btn" onclick="startQuiz()">테스트 시작하기 →</button>
+    <div class="footer-note">CareMedi 정보보호팀 | 2025</div>
+  </div>
+
+  <!-- 질문 카드 -->
+  <div id="quizArea">
+  </div>
+
+  <!-- 결과 화면 -->
+  <div class="result-screen" id="resultScreen">
+    <div class="result-card" id="resultCard"></div>
+    <div class="item-results" id="itemResults"></div>
+    <div class="guide-card">
+      <h3>📌 필수 행동 가이드</h3>
+      <div class="guide-item"><span>✅</span><span>자리 비울 때 반드시 화면 잠금 (윈도우+L)</span></div>
+      <div class="guide-item"><span>✅</span><span>퇴근 시 기밀 서류 잠금 서랍 보관</span></div>
+      <div class="guide-item"><span>✅</span><span>비밀번호 메모·포스트잇 절대 금지</span></div>
+      <div class="guide-item"><span>✅</span><span>업무 PC에 개인 메신저(카카오톡 등) 설치 금지</span></div>
+      <div class="guide-item"><span>✅</span><span>출력물은 즉시 수거, 파쇄함 처리</span></div>
+      <div class="guide-item"><span>✅</span><span>USB·외장하드 방치 금지</span></div>
+    </div>
+    <button class="report-btn">🚨 보안 이슈 정보보호팀 신고</button>
+    <button class="retry-btn" onclick="retryQuiz()">🔄 다시 테스트하기</button>
+    <div class="footer-note">CareMedi 정보보호팀 | 이 테스트 결과는 저장되지 않습니다</div>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  {
+    category: "🖥️ PC·화면 보안",
+    text: "자리를 잠깐 비울 때 화면 잠금(윈도우+L)을 하나요?",
+    tip: "💡 5분 자리를 비우는 사이에도 옆을 지나가는 누군가가 화면을 볼 수 있습니다.",
+    options: [
+      { text: "항상 합니다", good: true },
+      { text: "대부분 합니다", good: true },
+      { text: "가끔 깜빡합니다", good: false },
+      { text: "거의 안 합니다", good: false }
+    ],
+    feedback_good: "✅ 훌륭합니다! 화면 잠금은 가장 기본적인 물리적 보안입니다.",
+    feedback_bad: "❌ 화면 미잠금은 내 계정·업무화면 노출 위험이 있습니다. 윈도우+L 습관화 필수!"
+  },
+  {
+    category: "🖥️ PC·화면 보안",
+    text: "퇴근 시 PC를 완전히 종료하나요?",
+    tip: "💡 절전 모드는 로그인 상태가 유지됩니다. 완전 종료가 안전합니다.",
+    options: [
+      { text: "항상 종료합니다", good: true },
+      { text: "절전 모드로 둡니다", good: false },
+      { text: "그냥 모니터만 끕니다", good: false },
+      { text: "신경 안 씁니다", good: false }
+    ],
+    feedback_good: "✅ 완전 종료는 무단 접근을 차단하는 효과적인 방법입니다.",
+    feedback_bad: "❌ 절전/모니터 OFF 상태에서는 원격 접근 시도가 가능할 수 있습니다. 퇴근 시 완전 종료 권장!"
+  },
+  {
+    category: "🖥️ PC·화면 보안",
+    text: "모니터나 책상에 비밀번호를 포스트잇으로 붙여둔 적 있나요?",
+    tip: "💡 방문객, 청소직원, 외부인도 쉽게 볼 수 있습니다.",
+    options: [
+      { text: "전혀 없습니다", good: true },
+      { text: "예전에 한 번 있었습니다", good: false },
+      { text: "현재 붙여두고 있습니다", good: false },
+      { text: "서랍 안에 메모해뒀습니다", good: false }
+    ],
+    feedback_good: "✅ 올바른 습관입니다! 비밀번호는 머릿속에만 존재해야 합니다.",
+    feedback_bad: "❌ 비밀번호 메모는 내부자 유출의 대표적 원인입니다. 즉시 제거해 주세요!"
+  },
+  {
+    category: "📁 문서·자료 관리",
+    text: "출력한 업무 자료를 자리를 비울 때 책상 위에 그냥 두나요?",
+    tip: "💡 기밀 보고서, 계약서 등이 노출되면 물리적 정보 유출입니다.",
+    options: [
+      { text: "항상 뒤집거나 서랍에 넣습니다", good: true },
+      { text: "중요한 것만 치웁니다", good: false },
+      { text: "별로 신경 안 씁니다", good: false },
+      { text: "항상 그냥 둡니다", good: false }
+    ],
+    feedback_good: "✅ 클린 데스크 정책의 핵심 실천자입니다!",
+    feedback_bad: "❌ 출력물 노출은 사진 촬영 한 장으로 유출될 수 있습니다. 자리 비울 때 반드시 뒤집거나 서랍에 보관하세요."
+  },
+  {
+    category: "📁 문서·자료 관리",
+    text: "불필요한 출력물을 어떻게 처리하나요?",
+    tip: "💡 일반 휴지통에 버린 문서는 복원·열람이 가능합니다.",
+    options: [
+      { text: "파쇄함(문서 세단기)에 버립니다", good: true },
+      { text: "찢어서 일반 휴지통에 버립니다", good: false },
+      { text: "그냥 일반 휴지통에 버립니다", good: false },
+      { text: "책상 위에 쌓아둡니다", good: false }
+    ],
+    feedback_good: "✅ 완벽합니다! 파쇄함 사용은 물리적 보안의 필수 요소입니다.",
+    feedback_bad: "❌ 일반 휴지통 처리는 정보 유출로 이어질 수 있습니다. 반드시 파쇄함을 이용해 주세요!"
+  },
+  {
+    category: "🔐 계정·인증 보안",
+    text: "사내 시스템 비밀번호를 메모하거나 적어둔 곳이 있나요?",
+    tip: "💡 비밀번호 관리가 어렵다면 정보보호팀에 패스워드 매니저 도입을 문의하세요.",
+    options: [
+      { text: "없습니다, 외워서 사용합니다", good: true },
+      { text: "암호화된 앱에만 저장합니다", good: true },
+      { text: "메모장·엑셀 파일에 저장합니다", good: false },
+      { text: "책상 서랍이나 수첩에 적어뒀습니다", good: false }
+    ],
+    feedback_good: "✅ 이상적인 비밀번호 관리입니다!",
+    feedback_bad: "❌ 메모장·수첩에 저장한 비밀번호는 타인에게 노출될 위험이 높습니다. 즉시 삭제 후 비밀번호를 변경하세요!"
+  },
+  {
+    category: "🔐 계정·인증 보안",
+    text: "동료가 요청할 때 본인 계정으로 대신 로그인해준 적 있나요?",
+    tip: "💡 계정 공유 시 사고 발생 시 책임 소재가 불분명해집니다.",
+    options: [
+      { text: "절대 없습니다", good: true },
+      { text: "급한 상황에서 한두 번 있었습니다", good: false },
+      { text: "동료니까 괜찮다고 생각합니다", good: false },
+      { text: "자주 합니다", good: false }
+    ],
+    feedback_good: "✅ 정확합니다! 계정은 반드시 본인만 사용해야 합니다.",
+    feedback_bad: "❌ 계정 공유는 내부 감사·사고 발생 시 본인이 책임을 질 수 있습니다. 어떤 경우에도 계정 공유 금지!"
+  },
+  {
+    category: "💻 업무 PC 메신저",
+    text: "업무용 PC에 개인 메신저(카카오톡, 텔레그램 등)를 설치해서 사용하나요?",
+    tip: "💡 개인 메신저를 통해 악성코드 유입 및 업무 파일 외부 유출이 발생할 수 있습니다.",
+    options: [
+      { text: "설치하지 않습니다", good: true },
+      { text: "웹버전만 가끔 씁니다", good: false },
+      { text: "설치해서 자주 씁니다", good: false },
+      { text: "업무 파일도 주고받은 적 있습니다", good: false }
+    ],
+    feedback_good: "✅ 올바른 사용입니다! 업무 PC는 업무용 메신저만 사용해야 합니다.",
+    feedback_bad: "❌ 개인 메신저는 DLP 탐지 대상이며 악성코드 유입 경로가 됩니다. 즉시 삭제하고 업무용 메신저만 사용하세요!"
+  },
+  {
+    category: "📱 기기·외부매체",
+    text: "USB, 외장하드를 책상 위에 방치하거나 PC에 꽂아둔 채 자리를 비우나요?",
+    tip: "💡 물리적 매체는 분실·도난 시 즉시 데이터 유출로 이어집니다.",
+    options: [
+      { text: "항상 서랍에 보관합니다", good: true },
+      { text: "사용 후 바로 뽑아서 보관합니다", good: true },
+      { text: "책상 위에 두는 편입니다", good: false },
+      { text: "항상 PC에 꽂아둡니다", good: false }
+    ],
+    feedback_good: "✅ 훌륭합니다! 외부 매체는 항상 잠금 보관이 원칙입니다.",
+    feedback_bad: "❌ USB 분실 한 건이 수천 명의 개인정보 유출로 이어진 실제 사례가 있습니다. 사용 후 즉시 보관하세요!"
+  },
+  {
+    category: "📱 기기·외부매체",
+    text: "개인 스마트폰을 업무 PC USB에 연결한 적 있나요? (충전 포함)",
+    tip: "💡 스마트폰 연결 시 파일 자동 동기화 또는 악성코드 이동 경로가 될 수 있습니다.",
+    options: [
+      { text: "전혀 없습니다", good: true },
+      { text: "충전만 합니다", good: false },
+      { text: "파일 전송도 합니다", good: false },
+      { text: "자주 연결합니다", good: false }
+    ],
+    feedback_good: "✅ 정확합니다! 개인 기기와 업무 PC는 분리가 원칙입니다.",
+    feedback_bad: "❌ 충전 목적이라도 USB 연결은 데이터 접근 경로가 될 수 있습니다. 개인 충전기나 충전 전용 허브를 사용하세요!"
+  }
+];
+
+let current = 0;
+let scores = [];
+let answered = [];
+
+function startQuiz() {
+  document.getElementById('introScreen').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'block';
+  renderQuestion(0);
+}
+
+function renderQuestion(idx) {
+  const q = questions[idx];
+  const area = document.getElementById('quizArea');
+
+  let optHTML = q.options.map((o, i) => `
+    <button class="opt-btn" onclick="selectAnswer(${idx}, ${i}, ${o.good})">
+      <span class="opt-icon">${String.fromCharCode(65+i)}</span>
+      <span>${o.text}</span>
+    </button>
+  `).join('');
+
+  area.innerHTML = `
+    <div class="question-card active" id="qcard-${idx}">
+      <div class="q-category">${q.category}</div>
+      <div class="q-number">Q${idx+1} / ${questions.length}</div>
+      <div class="q-text">${q.text}</div>
+      <div class="q-tip">${q.tip}</div>
+      <div class="options" id="opts-${idx}">${optHTML}</div>
+      <div class="feedback" id="fb-${idx}"></div>
+      <button class="next-btn" id="next-${idx}" onclick="nextQuestion(${idx})">
+        ${idx < questions.length-1 ? '다음 문항 →' : '결과 보기 🎯'}
+      </button>
+    </div>
+  `;
+
+  updateProgress(idx);
+}
+
+function selectAnswer(qIdx, optIdx, isGood) {
+  if (answered[qIdx] !== undefined) return;
+  answered[qIdx] = isGood;
+
+  const opts = document.querySelectorAll(`#opts-${qIdx} .opt-btn`);
+  opts.forEach((btn, i) => {
+    btn.style.pointerEvents = 'none';
+    if (i === optIdx) {
+      btn.classList.add(isGood ? 'selected-good' : 'selected-bad');
+      btn.querySelector('.opt-icon').textContent = isGood ? '✓' : '✗';
+    }
+  });
+
+  const q = questions[qIdx];
+  const fb = document.getElementById(`fb-${qIdx}`);
+  fb.textContent = isGood ? q.feedback_good : q.feedback_bad;
+  fb.className = `feedback show ${isGood ? 'good' : 'bad'}`;
+
+  if (isGood) scores.push(qIdx);
+  document.getElementById(`next-${qIdx}`).classList.add('show');
+}
+
+function nextQuestion(idx) {
+  if (idx < questions.length - 1) {
+    renderQuestion(idx + 1);
+    current = idx + 1;
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  } else {
+    showResult();
+  }
+}
+
+function updateProgress(idx) {
+  const pct = Math.round((idx / questions.length) * 100);
+  document.getElementById('progressText').textContent = `${idx+1} / ${questions.length}`;
+  document.getElementById('progressPct').textContent = `${pct}%`;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function showResult() {
+  document.getElementById('quizArea').innerHTML = '';
+  document.getElementById('progressWrap').style.display = 'none';
+
+  const total = scores.length;
+  const pct = Math.round((total / questions.length) * 100);
+
+  let grade, gradeClass, emoji, title, desc;
+  if (pct >= 90) {
+    grade = 'S등급'; gradeClass = 'grade-s'; emoji = '🏆';
+    title = '보안 우수 직원';
+    desc = '훌륭합니다! 정보보안 습관이 완벽하게 자리잡혀 있습니다. 이 수준을 유지하고 주변 동료에게도 좋은 영향을 주세요.';
+  } else if (pct >= 70) {
+    grade = 'A등급'; gradeClass = 'grade-a'; emoji = '👍';
+    title = '보안 양호';
+    desc = '대부분의 보안 습관이 잘 잡혀 있습니다. 틀린 항목을 중심으로 조금 더 신경 써주시면 완벽합니다.';
+  } else if (pct >= 50) {
+    grade = 'B등급'; gradeClass = 'grade-b'; emoji = '⚠️';
+    title = '개선 필요';
+    desc = '일부 보안 습관에 위험 요소가 있습니다. 아래 행동 가이드를 참고하여 즉시 개선해 주세요.';
+  } else {
+    grade = 'C등급'; gradeClass = 'grade-c'; emoji = '🚨';
+    title = '즉시 점검 필요';
+    desc = '여러 항목에서 보안 위험이 발견되었습니다. 지금 당장 아래 가이드를 실천하고, 필요 시 정보보호팀에 문의해 주세요.';
+  }
+
+  document.getElementById('resultCard').innerHTML = `
+    <div class="result-grade-circle ${gradeClass}">
+      <span style="font-size:36px">${emoji}</span>
+      <span class="result-grade-label">${grade}</span>
+    </div>
+    <div class="result-title">${title}</div>
+    <div class="result-score">10문항 중 ${total}개 정답 (${pct}점)</div>
+    <div class="result-desc">${desc}</div>
+  `;
+
+  // 항목별 결과
+  let itemHTML = '<h3>📋 문항별 결과</h3>';
+  questions.forEach((q, i) => {
+    const isGood = answered[i] === true;
+    itemHTML += `
+      <div class="item-row">
+        <span class="item-dot ${isGood ? 'dot-good' : 'dot-bad'}"></span>
+        <span style="flex:1">Q${i+1}. ${q.text.substring(0,22)}...</span>
+        <span style="font-weight:700; color:${isGood ? 'var(--green)' : 'var(--red)'}">${isGood ? '✓' : '✗'}</span>
+      </div>`;
+  });
+  document.getElementById('itemResults').innerHTML = itemHTML;
+
+  const rs = document.getElementById('resultScreen');
+  rs.classList.add('show');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function retryQuiz() {
+  current = 0; scores = []; answered = [];
+  document.getElementById('resultScreen').classList.remove('show');
+  document.getElementById('progressWrap').style.display = 'block';
+  renderQuestion(0);
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+</script>
+</body>
+</html>
